@@ -1,95 +1,81 @@
 <!DOCTYPE html>
 <html lang="ar">
 <head>
-  <meta charset="UTF-8">
-  <title>بحث يوتيوب</title>
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <style>
-    body {
-      margin: 0;
-      padding: 20px;
-      font-family: sans-serif;
-      color: #fff;
-      text-align: center;
-      background: url("https://i.ibb.co/Design Image.JPEG") no-repeat center center fixed;
-      background-size: cover;
-      backdrop-filter: blur(2px);
-    }
-    input {
-      width: 70%;
-      padding: 8px;
-      border-radius: 5px;
-      border: none;
-      margin-bottom: 10px;
-    }
-    button {
-      padding: 8px 15px;
-      border: none;
-      border-radius: 5px;
-      background: #e62117;
-      color: #fff;
-      font-weight: bold;
-      cursor: pointer;
-    }
-    button:hover {
-      background: #ff0000;
-    }
-    .video {
-      margin: 15px 0;
-      padding: 10px;
-      background: rgba(0,0,0,0.6);
-      border-radius: 10px;
-    }
-    iframe {
-      margin-top: 10px;
-      border-radius: 10px;
-    }
-  </style>
+<meta charset="UTF-8">
+<title>YouTube Mini App</title>
+<style>
+body { margin:0; font-family:sans-serif; background:#111; color:#fff; }
+header { padding:10px; position:sticky; top:0; background:#202020; z-index:10; text-align:center; }
+#query { width:80%; padding:15px; font-size:18px; border-radius:25px; border:none; }
+#searchBtn { padding:15px 20px; font-size:16px; border:none; border-radius:25px; background:#e62117; color:#fff; cursor:pointer; }
+.result { padding:10px; display:flex; flex-direction:column; gap:20px; }
+.video { background:#181818; border-radius:10px; overflow:hidden; padding:10px; }
+.video img { width:100%; border-radius:10px; cursor:pointer; }
+.video h3 { font-size:16px; margin:10px 0; }
+audio, iframe { width:100%; margin-top:10px; border-radius:10px; }
+button.audioBtn { margin-top:10px; padding:10px; border:none; border-radius:10px; background:#1e90ff; color:#fff; cursor:pointer; }
+</style>
 </head>
 <body>
-  <h2>🔎 بحث فيديوهات يوتيوب</h2>
-  <input id="query" type="text" placeholder="اكتب اسم الفيديو...">
-  <button onclick="search()">بحث</button>
-  <div id="results"></div>
 
-  <script>
-    async function search() {
-      let q = document.getElementById("query").value.trim();
-      if (!q) {
-        document.getElementById("results").innerHTML = "<p>⚠️ اكتب كلمة للبحث</p>";
-        return;
-      }
-      let key = "AIzaSyDNWF1-aAIueeO6QNbrsarXqNuL0xGJ1ls"; // مفتاحك
-      let url = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&q=${encodeURIComponent(q)}&key=${key}&maxResults=5`;
+<header>
+<input id="query" type="text" placeholder="ابحث عن فيديوهات...">
+<button id="searchBtn" onclick="searchVideos()">بحث</button>
+</header>
 
-      try {
-        let res = await fetch(url);
-        let data = await res.json();
+<div class="result" id="results"></div>
 
-        if (!data.items) {
-          document.getElementById("results").innerHTML = "<p>❌ لم يتم العثور على نتائج</p>";
-          return;
-        }
+<script>
+const SERVER_URL = "http://127.0.0.1:8000"; // عدّل إلى رابط سيرفرك عند الاستضافة
+
+async function searchVideos() {
+    const q = document.getElementById("query").value.trim();
+    if(!q){ alert("أدخل كلمات للبحث"); return; }
+    const resDiv = document.getElementById("results");
+    resDiv.innerHTML = "<p>⏳ جاري البحث...</p>";
+
+    try {
+        const res = await fetch(`${SERVER_URL}/search?q=${encodeURIComponent(q)}`);
+        const data = await res.json();
+        if(data.status !== "ok"){ resDiv.innerHTML = "⚠️ خطأ بالبحث"; return; }
 
         let html = "";
-        data.items.forEach(v => {
-          let vid = v.id.videoId;
-          let title = v.snippet.title;
-          html += `
+        data.results.forEach(v=>{
+            html += `
             <div class="video">
-              <b>${title}</b><br>
-              <iframe width="300" height="200"
-                src="https://www.youtube.com/embed/${vid}"
-                frameborder="0" allowfullscreen>
-              </iframe>
-            </div>
-          `;
+                <img src="${v.thumbnail}" onclick="playVideo('${v.video_id}', this)">
+                <h3>${v.title}</h3>
+                <button class="audioBtn" onclick="playAudio('${v.video_id}', this)">🎧 تشغيل صوت فقط</button>
+                <div class="player"></div>
+            </div>`;
         });
-        document.getElementById("results").innerHTML = html;
-      } catch (e) {
-        document.getElementById("results").innerHTML = "<p>⚠️ خطأ في جلب النتائج</p>";
-      }
+        resDiv.innerHTML = html;
+    } catch(e){
+        resDiv.innerHTML = "❌ فشل الاتصال";
     }
-  </script>
+}
+
+function playVideo(videoId, imgElement){
+    const container = imgElement.parentElement.querySelector(".player");
+    container.innerHTML = `<iframe src="https://www.youtube.com/embed/${videoId}" allowfullscreen></iframe>`;
+}
+
+async function playAudio(videoId, btnElement){
+    const container = btnElement.parentElement.querySelector(".player");
+    container.innerHTML = "⏳ جاري تجهيز الصوت...";
+    try{
+        const res = await fetch(`${SERVER_URL}/audio_url?video_id=${videoId}`);
+        const data = await res.json();
+        if(data.status==="ok"){
+            container.innerHTML = `<audio controls autoplay src="${data.audio_url}"></audio>`;
+        } else {
+            container.innerHTML = "⚠️! فشل استخراج الصوت";
+        }
+    } catch(e){
+        container.innerHTML = "❌ خطأ اتصال";
+    }
+}
+</script>
+
 </body>
 </html>
