@@ -6,11 +6,14 @@
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
     body {
-      background: #111;
-      color: #fff;
-      font-family: sans-serif;
-      text-align: center;
+      margin: 0;
       padding: 20px;
+      font-family: sans-serif;
+      color: #fff;
+      text-align: center;
+      background: url("https://i.ibb.co/Design Image.JPEG") no-repeat center center fixed;
+      background-size: cover;
+      backdrop-filter: blur(2px);
     }
     input {
       width: 70%;
@@ -34,18 +37,12 @@
     .video {
       margin: 15px 0;
       padding: 10px;
-      border: 1px solid #333;
-      border-radius: 5px;
-      text-align: left;
+      background: rgba(0,0,0,0.6);
+      border-radius: 10px;
     }
-    .video img {
-      vertical-align: middle;
-      margin-right: 10px;
-    }
-    .video a {
-      color: #1e90ff;
-      text-decoration: none;
-      font-weight: bold;
+    iframe {
+      margin-top: 10px;
+      border-radius: 10px;
     }
   </style>
 </head>
@@ -59,10 +56,10 @@
     async function search() {
       let q = document.getElementById("query").value.trim();
       if (!q) {
-        document.getElementById("results").innerHTML = "<p>⚠️ !اكتب كلمة للبحث</p>";
+        document.getElementById("results").innerHTML = "<p>⚠️ اكتب كلمة للبحث</p>";
         return;
       }
-      let key = "AIzaSyDNWF1-aAIueeO6QNbrsarXqNuL0xGJ1ls"; // ضع مفتاح API هنا
+      let key = "AIzaSyDNWF1-aAIueeO6QNbrsarXqNuL0xGJ1ls"; // مفتاحك
       let url = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&q=${encodeURIComponent(q)}&key=${key}&maxResults=5`;
 
       try {
@@ -70,7 +67,7 @@
         let data = await res.json();
 
         if (!data.items) {
-          document.getElementById("results").innerHTML = "<p>!❌ لم يتم العثور على نتائج</p>";
+          document.getElementById("results").innerHTML = "<p>❌ لم يتم العثور على نتائج</p>";
           return;
         }
 
@@ -78,20 +75,19 @@
         data.items.forEach(v => {
           let vid = v.id.videoId;
           let title = v.snippet.title;
-          let thumb = v.snippet.thumbnails.medium.url;
           html += `
             <div class="video">
-              <img src="${thumb}" width="120">
-              <div style="display:inline-block;vertical-align:middle;">
-                <b>${title}</b><br>
-                <a href="https://youtube.com/watch?v=${vid}" target="_blank">▶️ شاهد</a>
-              </div>
+              <b>${title}</b><br>
+              <iframe width="300" height="200"
+                src="https://www.youtube.com/embed/${vid}"
+                frameborder="0" allowfullscreen>
+              </iframe>
             </div>
           `;
         });
         document.getElementById("results").innerHTML = html;
       } catch (e) {
-        document.getElementById("results").innerHTML = "<p>⚠️! خطأ في جلب النتائج</p>";
+        document.getElementById("results").innerHTML = "<p>⚠️ خطأ في جلب النتائج</p>";
       }
     }
   </script>
