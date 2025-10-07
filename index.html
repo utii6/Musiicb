@@ -2,17 +2,16 @@
 <html lang="ar">
 <head>
     <meta charset="UTF-8">
-    <title>بحث يوتيوب</title>
+    <title>بحث يوتيوب مباشر</title>
     <style>
         body { font-family: Arial, sans-serif; padding: 20px; background-color: #f0f0f0; }
         input { width: 300px; padding: 8px; }
         button { padding: 8px 12px; }
-        .result { margin-top: 15px; padding: 10px; background: #fff; border-radius: 5px; }
-        .video { margin-bottom: 10px; }
+        .video { margin-bottom: 10px; background: #fff; padding: 10px; border-radius: 5px; }
     </style>
 </head>
 <body>
-    <h2>بحث يوتيوب</h2>
+    <h2>بحث يوتيوب مباشر</h2>
     <input id="search" placeholder="اكتب هنا بحثك">
     <button onclick="searchYouTube()">بحث</button>
 
@@ -33,17 +32,18 @@
                 return;
             }
 
-            if(!data.items || data.items.length === 0) {
+            if(!data.result || data.result.length === 0) {
                 resultsDiv.innerHTML = "🔍 ماكو نتائج للبحث هذا.";
                 return;
             }
 
             let html = "";
-            data.items.forEach((item, index) => {
-                const title = item.snippet.title;
-                const link = "https://www.youtube.com/watch?v=" + item.id.videoId;
+            data.result.forEach((item, index) => {
+                const title = item.title;
+                const link = item.link;
                 html += `<div class="video">${index+1}. <a href="${link}" target="_blank">${title}</a></div>`;
             });
+
             resultsDiv.innerHTML = html;
 
         } catch (error) {
