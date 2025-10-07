@@ -24,7 +24,7 @@
         resultsDiv.innerHTML = "🔄 جاري البحث...";
 
         try {
-            const response = await fetch('/search?q=' + encodeURIComponent(query));
+            const response = await fetch(window.location.origin + '/search?q=' + encodeURIComponent(query));
             const data = await response.json();
 
             if(data.error) {
