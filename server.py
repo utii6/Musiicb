@@ -1,25 +1,40 @@
-from flask import Flask, request, jsonify, send_from_directory
-from youtubesearchpython import VideosSearch
-import os
+from fastapi import FastAPI, Query
+from fastapi.middleware.cors import CORSMiddleware
+from googleapiclient.discovery import build
 
-app = Flask(__name__)
+app = FastAPI()
 
-@app.route('/')
-def index():
-    return send_from_directory('.', 'index.html')
+# السماح بالوصول من أي مصدر (لأن الميني أب يحتاجه)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-@app.route('/search')
-def search():
-    query = request.args.get('q')
-    if not query:
-        return jsonify({'error': 'يجب ادخال نص البحث'})
-    try:
-        videosSearch = VideosSearch(query, limit=5)
-        result = videosSearch.result()
-        return jsonify(result)
-    except Exception as e:
-        return jsonify({'error': str(e)})
+YOUTUBE_API_KEY = "AIzaSyDNWF1-aAIueeO6QNbrsarXqNuL0xGJ1ls"
 
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+@app.get("/")
+def home():
+    return {"message": "YouTube search server active."}
+
+@app.get("/search")
+def search_videos(q: str = Query(..., min_length=1)):
+    youtube = build("youtube", "v3", developerKey=YOUTUBE_API_KEY)
+    request = youtube.search().list(
+        q=q,
+        part="snippet",
+        type="video",
+        maxResults=10
+    )
+    response = request.execute()
+    results = [
+        {
+            "title": item["snippet"]["title"],
+            "videoId": item["id"]["videoId"],
+            "thumbnail": item["snippet"]["thumbnails"]["medium"]["url"]
+        }
+        for item in response["items"]
+    ]
+    return {"results": results}
